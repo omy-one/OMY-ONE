@@ -1,0 +1,576 @@
+<DOCTYPE html>
+<html>
+	<head>
+		<title>OMY|ONE drum machine</title>
+	</head>
+	<body>
+		
+		<div id="app">
+			<div>
+				<header>
+					<div id="logo">
+						<img src="img/omy-one-logo.png" title="OMY ONE">
+					</div>
+					<div class="current-pad">{{ currentPad + 1 }}</div>
+				</header>
+				<div id="tracks">
+					<div class="track" v-for="track in tracks">
+						<div class="pad" v-for="pad in track.pads" v-bind:class="{'active': pad.active, 'playing': pad.playing}" @click="setActive(track, pad);"></div>
+					</div>
+				</div>
+				<footer>
+					<div id="settings">
+						<div class="item stop">
+							<button @click="toggleFullscreen">FS</button>
+							<button @click="startStop">{{ isPlaying ? 'Stop' : 'Play' }}</button>
+						</div>
+						<div class="item tempo">
+							<label>Tempo:</label>
+							<input id="bpm-control" type="range" min="150" max="600" value="400" @change="setBPM">
+							<!-- <span id="bpm-value">{{ bpm }}</span> -->
+						</div>
+					</div>
+				</footer>
+			</div>
+		</div>
+		
+		<style>
+			
+			* {
+				box-sizing: border-box;
+			}
+			
+			* {
+				-webkit-touch-callout: none;
+				-webkit-user-select: none;
+				-khtml-user-select: none;
+				-moz-user-select: none;
+				-ms-user-select: none;
+				user-select: none;
+				-webkit-tap-highlight-color: transparent;
+			}
+			
+			html {
+				background-color: #020209;
+				color: #844aa3;
+				background-image: url('img/bg.png');
+			}
+			
+			button {
+				border: 2px solid #844aa3;
+				border-radius: 3px;
+				background: #020209;
+				padding: 0;
+				color: #844aa3;
+				font-weight: bold;
+				cursor: pointer;
+				transition: all 0.1s ease;
+			}
+			
+			button:active {
+				transform: translateY(2px);
+			}
+			
+			body {
+				padding: 0;
+				margin: 0;
+			}
+			
+			body .track + .track {
+				margin-top: 0.3vw;
+			}
+			
+			header {
+				position: relative;
+				padding: 10px;
+			}
+			
+			footer {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				width: 100%;
+				height: 100px;
+				padding: 10px;
+			}
+			
+			#tracks {
+				position: absolute;
+				top: 50%;
+				transform: translateY(-50%);
+				width: 100%;
+				padding-left: 1.1vw;
+			}
+			
+			.current-pad {
+				position: absolute;
+				top: 0;
+				right: 0;
+			}
+			
+			.track {
+				display: grid;
+				grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+			}
+			
+			.pad {
+				margin: 0.3vw;
+				width: 5vw;
+				height: 5vw;
+				border-radius: 3px;
+				background-color: #2c2c34;
+				cursor: pointer;
+			}
+			
+			.pad:nth-child(1),
+			.pad:nth-child(5),
+			.pad:nth-child(9),
+			.pad:nth-child(13) {
+				background-color: #3d3d47;
+			}
+			
+			.pad.active {
+				background-color: #764b9f;
+			}
+			
+			.pad.playing {
+				background-color: #567051;
+			}
+			
+			.pad.active.playing {
+				background-color: #99c554;
+			}
+			
+			#settings {
+				position: relative;
+			}
+			
+			input#bpm-control {
+				vertical-align: middle;
+				width: 55%;
+				background-color: #2c2c34;
+			}
+			
+			.item.stop {
+				position: absolute;
+				top: 0;
+				right: 0;
+			}
+			
+			.item.stop button {
+				width: 15vh;
+				max-width: 50px;
+				height: 15vh;
+				max-height: 50px;
+			}
+			
+			.item.tempo {
+				width: 70%;
+				position: relative;
+				top: 9px;
+			}
+			
+			
+			input[type=range] {
+				-webkit-appearance: none;
+				width: 100%;
+				margin: 8.9px 0;
+			}
+			
+			input[type=range]:focus {
+				outline: none;
+			}
+			
+			input[type=range]::-webkit-slider-runnable-track {
+				width: 100%;
+				height: 6.2px;
+				cursor: pointer;
+				box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+				background: #7671a9;
+				border-radius: 0.2px;
+				border: 0.2px solid #010101;
+			}
+			
+			input[type=range]::-webkit-slider-thumb {
+				box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+				border: 1px solid #000000;
+				height: 24px;
+				width: 33px;
+				border-radius: 3px;
+				background: #764b9f;
+				cursor: pointer;
+				-webkit-appearance: none;
+				margin-top: -9.1px;
+			}
+			
+			input[type=range]:focus::-webkit-slider-runnable-track {
+				background: #8581b3;
+			}
+			
+			input[type=range]::-moz-range-track {
+				width: 100%;
+				height: 6.2px;
+				cursor: pointer;
+				box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+				background: #7671a9;
+				border-radius: 0.2px;
+				border: 0.2px solid #010101;
+			}
+			
+			input[type=range]::-moz-range-thumb {
+				box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+				border: 1px solid #000000;
+				height: 24px;
+				width: 33px;
+				border-radius: 3px;
+				background: #764b9f;
+				cursor: pointer;
+			}
+			
+			input[type=range]::-ms-track {
+				width: 100%;
+				height: 6.2px;
+				cursor: pointer;
+				background: transparent;
+				border-color: transparent;
+				color: transparent;
+			}
+			
+			input[type=range]::-ms-fill-lower {
+				background: #67619f;
+				border: 0.2px solid #010101;
+				border-radius: 0.4px;
+				box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+			}
+			
+			input[type=range]::-ms-fill-upper {
+				background: #7671a9;
+				border: 0.2px solid #010101;
+				border-radius: 0.4px;
+				box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+			}
+			
+			input[type=range]::-ms-thumb {
+				box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+				border: 1px solid #000000;
+				height: 24px;
+				width: 33px;
+				border-radius: 3px;
+				background: #764b9f;
+				cursor: pointer;
+				height: 6.2px;
+			}
+			
+			input[type=range]:focus::-ms-fill-lower {
+				background: #7671a9;
+			}
+			
+			input[type=range]:focus::-ms-fill-upper {
+				background: #8581b3;
+			}
+			
+		</style>
+		
+		<script src="lib/vue.js"></script>
+		<script src="samples/samples.js"></script>
+		
+		<script>
+			
+			
+			var Base64Binary = {
+				_keyStr : "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",
+				
+				/* will return a  Uint8Array type */
+				decodeArrayBuffer: function(input) {
+					var bytes = (input.length/4) * 3;
+					var ab = new ArrayBuffer(bytes);
+					this.decode(input, ab);
+					
+					return ab;
+				},
+				
+				removePaddingChars: function(input){
+					var lkey = this._keyStr.indexOf(input.charAt(input.length - 1));
+					if(lkey == 64){
+						return input.substring(0,input.length - 1);
+					}
+					return input;
+				},
+				
+				decode: function (input, arrayBuffer) {
+					//get last chars to see if are valid
+					input = this.removePaddingChars(input);
+					input = this.removePaddingChars(input);
+					
+					var bytes = parseInt((input.length / 4) * 3, 10);
+					
+					var uarray;
+					var chr1, chr2, chr3;
+					var enc1, enc2, enc3, enc4;
+					var i = 0;
+					var j = 0;
+					
+					if (arrayBuffer)
+						uarray = new Uint8Array(arrayBuffer);
+					else
+						uarray = new Uint8Array(bytes);
+					
+					input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
+					
+					for (i=0; i<bytes; i+=3) {
+						//get the 3 octects in 4 ascii chars
+						enc1 = this._keyStr.indexOf(input.charAt(j++));
+						enc2 = this._keyStr.indexOf(input.charAt(j++));
+						enc3 = this._keyStr.indexOf(input.charAt(j++));
+						enc4 = this._keyStr.indexOf(input.charAt(j++));
+						
+						chr1 = (enc1 << 2) | (enc2 >> 4);
+						chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+						chr3 = ((enc3 & 3) << 6) | enc4;
+						
+						uarray[i] = chr1;
+						if (enc3 != 64) uarray[i+1] = chr2;
+						if (enc4 != 64) uarray[i+2] = chr3;
+					}
+					
+					return uarray;
+				}
+			}
+			
+			
+			
+			const context = new AudioContext() || new webkitAudioContext();
+			
+			const soundBuffers = {};
+			
+			const loadSamples = function () {
+				
+				console.log(samples.hat)
+				
+				const byteArrayHat = Base64Binary.decodeArrayBuffer(samples.hat);
+				const byteArraySnare = Base64Binary.decodeArrayBuffer(samples.snare);
+				const byteArrayBass = Base64Binary.decodeArrayBuffer(samples.bass);
+				
+				context.decodeAudioData(byteArrayHat, function(buffer) {
+					soundBuffers['hat'] = buffer;
+				}, function(err) { console.log("err(decodeAudioData): "+err); });
+				
+				context.decodeAudioData(byteArraySnare, function(buffer) {
+					soundBuffers['snare'] = buffer;
+				}, function(err) { console.log("err(decodeAudioData): "+err); });
+				
+				context.decodeAudioData(byteArrayBass, function(buffer) {
+					soundBuffers['bass'] = buffer;
+				}, function(err) { console.log("err(decodeAudioData): "+err); });
+			}
+			
+			
+			const app = new Vue({
+				el: '#app',
+				data: {
+					bpm: 400,
+					tracks: [
+						// for example
+						{
+							sample: 'hat',
+							pads: [
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+							]
+						},
+						{
+							sample: 'snare',
+							pads: [
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+							]
+						},
+						{
+							sample: 'bass',
+							pads: [
+								{active: true, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: true, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: true, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: true, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+								{active: false, playing: false},
+							]
+						},
+					],
+					numberOfTracks: 3,
+					numberOfPads: 16,
+					currentPad: -1,
+					timerId: 0,
+					isPlaying: false,
+					isFullscreen: false,
+				},
+				/* computed: {
+					tracks: function {
+						const tracks = [];
+						return tracks;
+					}
+				}, */
+				watch: {
+					currentPad: function (n) {
+						this.tracks.forEach(track => {
+							track.pads[n].playing = true;
+							if (track.pads[n].active) {
+								this.playSample(track.sample);
+							}
+							const previousN = n != 0 ? n - 1 : track.pads.length - 1;
+							track.pads[previousN].playing = false;
+						});
+					},
+				},
+				methods: {
+					addTrack: (numberOfPads) => {
+						const track = {
+							id: 0,
+							settings: {
+								color: gray,
+							},
+							pads: [],
+						};
+						for (let i = 0; i < numberOfPads; i++) {
+							track.pads.push(false);
+						}
+						this.tracks.push(track);
+					},
+					createTracks: function() {
+						for (let i = 0; i < this.numberOfTracks; i++) {
+							createTrack();
+						}
+					},
+					createTrack: function() {
+						const track = {
+							sound: null,
+							pads: [],
+						};
+						track.pads = [];
+						this.tracks.push(track);
+					},
+					shiftActivePad: function(n) {
+						this.currentPad = this.currentPad == this.numberOfPads - 1 ? 0 : ++this.currentPad;
+					},
+					runTimer: function() {
+						this.timerId = setInterval(() => {
+							this.shiftActivePad();
+						}, 1000 * 60 / this.bpm);
+					},
+					stopTimer: function() {
+						clearInterval(this.timerId);
+					},
+					setBPM: function(event) {
+						const bpm = event.target.value;
+						this.bpm = bpm;
+						if (this.isPlaying) {
+							this.stopTimer();
+							this.runTimer(bpm);
+						}
+					},
+					setActive: function(track, pad) {
+						pad.active = !pad.active;
+						if (pad.active && !this.isPlaying) {
+							this.playSample(track.sample);
+						}
+					},
+					startStop: function() {
+						this.isPlaying = !this.isPlaying;
+						this.isPlaying ? this.runTimer() : this.stopTimer();
+					},
+					playSample: function(sampleName) {
+						if (typeof soundBuffers[sampleName] !== 'undefined') {
+							const source = context.createBufferSource();
+							source.buffer = soundBuffers[sampleName];
+							
+							const gainNode = context.createGain();
+							gainNode.gain.value = 0.4;
+							gainNode.connect(context.destination);
+							
+							source.connect(gainNode);
+							
+							source.start();
+						}
+					},
+					toggleFullscreen: function() {
+						if (this.isFullscreen) {
+							this.closeFullScreen();
+							this.isFullscreen = false;
+						} else {
+							this.openFullscreen();
+							this.isFullscreen = true;
+						}
+					},
+					openFullscreen: function () {
+						const elem = document.documentElement;
+						if (elem.requestFullscreen) {
+							elem.requestFullscreen();
+						} else if (elem.mozRequestFullScreen) {
+							elem.mozRequestFullScreen();
+						} else if (elem.webkitRequestFullscreen) {
+							elem.webkitRequestFullscreen();
+						} else if (elem.msRequestFullscreen) {
+							elem.msRequestFullscreen();
+						}
+					},
+					closeFullScreen: function () {
+						const elem = document.documentElement;
+						if (document.exitFullscreen) {
+							document.exitFullscreen();
+						} else if (document.mozCancelFullScreen) {
+							document.mozCancelFullScreen();
+						} else if (document.webkitExitFullscreen) {
+							document.webkitExitFullscreen();
+						} else if (document.msExitFullscreen) {
+							document.msExitFullscreen();
+						}
+					}
+				},
+				mounted: function() {
+					loadSamples();
+					this.startStop();
+				}
+			});
+			
+		</script>
+		
+	</body>
+</html>
